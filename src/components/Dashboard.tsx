@@ -1,23 +1,19 @@
-"use client"
 import React from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, PieChart, Pie
+import { 
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, PieChart, Pie
 } from 'recharts';
-import {
-  IndianRupee,
-  ArrowDownRight,
-  TrendingUp,
-  Package,
-  Scale,
+import { 
+  IndianRupee, 
+  ArrowDownRight, 
+  TrendingUp, 
+  Package, 
+  Scale, 
   Database,
   ArrowUpRight,
   Zap,
   Activity
 } from 'lucide-react';
 import { ProductionLog, ShopInventory, Transaction } from '../types';
-import { Button } from './ui/button'
-import { Card, CardContent, CardHeader } from './ui/card'
-import { Badge } from './ui/badge'
 
 interface DashboardProps {
   production: ProductionLog[];
@@ -26,37 +22,72 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, transactions }) => {
+  // Financial metrics
   const totalRevenue = transactions
     .filter(t => t.type === 'INCOME')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    .reduce((sum, t) => sum + t.amount, 0);
   
   const totalExpenses = transactions
     .filter(t => t.type === 'EXPENSE')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const netProfit = totalRevenue - totalExpenses;
-  const stockValue = inventory.reduce((sum, i) => sum + (i.pricePerUnit * i.quantity || 0), 0);
+  const stockValue = inventory.reduce((sum, i) => sum + i.totalInvestment, 0);
   
-  const totalRawProcessed = production.reduce((sum, l) => sum + (l.rawMaterialKg || 0), 0);
+  // Production metrics
+  const totalRawProcessed = production.reduce((sum, l) => sum + l.rawMaterialKg, 0);
   const averageYield = production.length > 0 
-    ? ((production.reduce((sum, l) => sum + ((l.pindiProducedKg || l.outputKg || 0) / (l.rawMaterialKg || 1)), 0) / production.length) * 100).toFixed(1)
-    : '0';
+    ? (production.reduce((sum, l) => sum + (l.pindiProducedKg / l.rawMaterialKg), 0) / production.length * 100).toFixed(1)
+    : 0;
 
   const kpiCards = [
-    { label: 'Total Revenue', value: totalRevenue, icon: <IndianRupee size={24} />, color: 'bg-emerald-50 text-emerald-600 border-emerald-100', trend: '+12.5%', trendUp: true },
-    { label: 'Total Expenses', value: totalExpenses, icon: <ArrowDownRight size={24} />, color: 'bg-rose-50 text-rose-600 border-rose-100', trend: '+5.2%', trendUp: false },
-    { label: 'Net Profit', value: netProfit, icon: <TrendingUp size={24} />, color: 'bg-indigo-50 text-indigo-600 border-indigo-100', trend: '+18.3%', trendUp: true },
-    { label: 'Inventory Value', value: stockValue, icon: <Package size={24} />, color: 'bg-amber-50 text-amber-600 border-amber-100', trend: 'Stable', trendUp: null },
+    { 
+      label: 'Total Revenue', 
+      value: totalRevenue, 
+      icon: <IndianRupee size={24} />, 
+      color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      trend: '+12.5%',
+      trendUp: true 
+    },
+    { 
+      label: 'Total Expenses', 
+      value: totalExpenses, 
+      icon: <ArrowDownRight size={24} />, 
+      color: 'bg-rose-50 text-rose-600 border-rose-100',
+      trend: '+5.2%',
+      trendUp: false 
+    },
+    { 
+      label: 'Net Profit', 
+      value: netProfit, 
+      icon: <TrendingUp size={24} />, 
+      color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+      trend: '+18.3%',
+      trendUp: true 
+    },
+    { 
+      label: 'Inventory Value', 
+      value: stockValue, 
+      icon: <Package size={24} />, 
+      color: 'bg-amber-50 text-amber-600 border-amber-100',
+      trend: 'Stable',
+      trendUp: null 
+    },
   ];
 
+  // Expense split for Pie Chart
   const expenseByCategory = transactions
     .filter(t => t.type === 'EXPENSE')
-    .reduce((acc: any, t) => {
-      acc[t.category] = (acc[t.category] || 0) + (t.amount || 0);
+    .reduce((acc: Record<string, number>, t) => {
+      acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
     }, {});
   
-  const pieData = Object.keys(expenseByCategory).map(key => ({ name: key, value: expenseByCategory[key] })).sort((a, b) => b.value - a.value).slice(0,5);
+  const pieData = Object.keys(expenseByCategory).map(key => ({
+    name: key,
+    value: expenseByCategory[key]
+  })).sort((a, b) => b.value - a.value).slice(0, 5);
+
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
 
   return (
@@ -78,44 +109,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
         </div>
       </header>
 
+      {/* Main KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpiCards.map((stat, idx) => (
-          <Card key={idx} className={`p-6 rounded-[2rem] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${stat.color}`}>
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white rounded-2xl shadow-sm">
-                  {stat.icon}
+          <div key={idx} className={`bg-white p-6 rounded-[2rem] border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${stat.color}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white rounded-2xl shadow-sm">
+                {stat.icon}
+              </div>
+              {stat.trend && (
+                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg bg-white border ${stat.trendUp === true ? 'text-green-600' : stat.trendUp === false ? 'text-red-600' : 'text-gray-500'}`}>
+                  {stat.trendUp === true ? <ArrowUpRight size={12} /> : stat.trendUp === false ? <ArrowDownRight size={12} /> : null}
+                  {stat.trend}
                 </div>
-                {stat.trend && (
-                  <Badge className={`${stat.trendUp === true ? 'text-green-600' : stat.trendUp === false ? 'text-red-600' : 'text-gray-500'}`}>
-                    {stat.trend}
-                  </Badge>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-widest opacity-60">{stat.label}</p>
-                <p className="text-3xl font-black mt-1 text-gray-900">₹{Number(stat.value || 0).toLocaleString()}</p>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest opacity-60">{stat.label}</p>
+              <p className="text-3xl font-black mt-1 text-gray-900">₹{stat.value.toLocaleString()}</p>
+            </div>
+          </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Production Chart */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-xl font-black text-gray-900">Production Volume (Palli)</h3>
               <p className="text-sm text-gray-400 font-medium">Daily processing throughput in Kilograms</p>
             </div>
-              <div className="flex items-center gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
-                <Button variant="ghost" className="px-3 py-1.5 text-xs font-bold">7D</Button>
-                <Button variant="default" className="px-3 py-1.5 text-xs font-bold">30D</Button>
-              </div>
+            <div className="flex items-center gap-2 p-1 bg-gray-50 rounded-xl border border-gray-100">
+              <button className="px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-indigo-600 rounded-lg transition-colors">7D</button>
+              <button className="px-3 py-1.5 text-xs font-bold bg-white text-indigo-600 shadow-sm rounded-lg">30D</button>
+            </div>
           </div>
           <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={production.slice(-10) as any}>
+              <AreaChart data={production.slice(-10)}>
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
@@ -136,6 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
           </div>
         </div>
 
+        {/* Expense Distribution */}
         <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
           <div className="mb-8">
             <h3 className="text-xl font-black text-gray-900">Expense Allocation</h3>
@@ -163,7 +196,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</p>
-               <p className="text-2xl font-black text-gray-900">₹{Number(totalExpenses || 0).toLocaleString()}</p>
+               <p className="text-2xl font-black text-gray-900">₹{totalExpenses.toLocaleString()}</p>
             </div>
           </div>
           <div className="mt-8 space-y-4">
@@ -174,8 +207,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
                    <span className="text-sm font-bold text-gray-600 group-hover:text-indigo-600 transition-colors">{item.name}</span>
                  </div>
                  <div className="text-right">
-                   <span className="text-sm font-black text-gray-900 block">₹{Number(item.value).toLocaleString()}</span>
-                   <span className="text-[10px] font-bold text-gray-400">{((item.value / (totalExpenses || 1)) * 100).toFixed(1)}%</span>
+                   <span className="text-sm font-black text-gray-900 block">₹{item.value.toLocaleString()}</span>
+                   <span className="text-[10px] font-bold text-gray-400">{((item.value / totalExpenses) * 100).toFixed(1)}%</span>
                  </div>
                </div>
              ))}
@@ -184,21 +217,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
         </div>
       </div>
 
+      {/* Summary Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-indigo-900 text-white p-8 rounded-[2rem] shadow-xl shadow-indigo-100 relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-800 rounded-full group-hover:scale-150 transition-transform duration-500 opacity-50"></div>
           <Scale className="text-indigo-400 mb-4" size={32} />
           <h4 className="text-lg font-black mb-1">Processing Efficiency</h4>
           <p className="text-3xl font-black mb-2">{averageYield}% <span className="text-sm font-normal text-indigo-300">Yield</span></p>
-          <p className="text-xs text-indigo-200">Total processed groundnuts: {Number(totalRawProcessed || 0).toLocaleString()} kg</p>
+          <p className="text-xs text-indigo-200">Total processed groundnuts: {totalRawProcessed.toLocaleString()} kg</p>
         </div>
 
         <div className="bg-emerald-900 text-white p-8 rounded-[2rem] shadow-xl shadow-emerald-100 relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-800 rounded-full group-hover:scale-150 transition-transform duration-500 opacity-50"></div>
           <TrendingUp className="text-emerald-400 mb-4" size={32} />
           <h4 className="text-lg font-black mb-1">Profitability Index</h4>
-          <p className="text-3xl font-black mb-2">{totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0'}% <span className="text-sm font-normal text-emerald-300">Margin</span></p>
-          <p className="text-xs text-emerald-200">Net take-home profit: ₹{Number(netProfit || 0).toLocaleString()}</p>
+          <p className="text-3xl font-black mb-2">{totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0}% <span className="text-sm font-normal text-emerald-300">Margin</span></p>
+          <p className="text-xs text-emerald-200">Net take-home profit: ₹{netProfit.toLocaleString()}</p>
         </div>
 
         <div className="bg-gray-900 text-white p-8 rounded-[2rem] shadow-xl shadow-gray-100 relative overflow-hidden group">
@@ -212,5 +246,3 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
     </div>
   );
 };
-
-export default Dashboard;

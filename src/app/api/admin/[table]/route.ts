@@ -1,4 +1,4 @@
-import supabaseAdmin from '../../../../lib/supabaseAdmin'
+import supabaseAdmin from '@/lib/supabaseAdmin'
 
 const ALLOWED_TABLES = [
   'production_logs',
@@ -42,8 +42,9 @@ export async function GET(req: Request, { params }: { params: { table: string } 
     const { data, error } = await supabaseAdmin.from(table).select('*').limit(1000)
     if (error) return new Response(error.message, { status: 500 })
     return new Response(JSON.stringify({ data }), { status: 200 })
-  } catch (e: any) {
-    return new Response(String(e?.message ?? e), { status: 500 })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return new Response(msg, { status: 500 })
   }
 }
 
@@ -59,7 +60,8 @@ export async function POST(req: Request, { params }: { params: { table: string }
     const { data, error } = await supabaseAdmin.from(table).insert(Array.isArray(body) ? body : [body])
     if (error) return new Response(error.message, { status: 500 })
     return new Response(JSON.stringify({ data }), { status: 201 })
-  } catch (e: any) {
-    return new Response(String(e?.message ?? e), { status: 400 })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return new Response(msg, { status: 400 })
   }
 }
