@@ -1,8 +1,15 @@
 "use client"
-import React from 'react'
-
 import React, { useEffect, useState } from 'react'
 import supabase from '../lib/supabaseClient'
+
+async function getAccessToken() {
+  try {
+    const res: any = await supabase.auth.getSession()
+    return res?.data?.session?.access_token ?? null
+  } catch (e) {
+    return null
+  }
+}
 
 const tableKeys = [
   'production_logs',
@@ -18,12 +25,19 @@ export default function DashboardStats() {
 
   useEffect(() => {
     async function load() {
+      const token = await getAccessToken()
       const next: Record<string, number> = {}
       for (const t of tableKeys) {
         try {
-          const res = await supabase.from(t).select('*', { count: 'exact', head: true })
-          // @ts-ignore
-          next[t] = res.count ?? 0
+          const res = await fetch(`/api/admin/${t}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          })
+          if (!res.ok) {
+            next[t] = 0
+            continue
+          }
+          const json = await res.json()
+          next[t] = Array.isArray(json.data) ? json.data.length : 0
         } catch (e) {
           next[t] = 0
         }

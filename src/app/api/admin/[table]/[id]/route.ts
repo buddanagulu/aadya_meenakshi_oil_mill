@@ -1,4 +1,4 @@
-import supabaseAdmin from '../../../../../../../src/lib/supabaseAdmin'
+import supabaseAdmin from '../../../../../lib/supabaseAdmin'
 
 const ALLOWED_TABLES = [
   'production_logs',

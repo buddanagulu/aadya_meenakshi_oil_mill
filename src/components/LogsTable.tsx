@@ -23,54 +23,98 @@ export default function LogsTable() {
   const [table, setTable] = useState<TableKey>('production_logs')
   const [rows, setRows] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
+  const [modalContent, setModalContent] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table])
 
+  async function getAccessToken() {
+    try {
+      const res: any = await supabase.auth.getSession()
+      return res?.data?.session?.access_token ?? null
+    } catch (e) {
+      return null
+    }
+  }
+
   async function load() {
     setLoading(true)
-    const { data, error } = await supabase.from(table).select('*').limit(200)
-    if (error) {
-      console.error(error)
+    const token = await getAccessToken()
+    try {
+      const res = await fetch(`/api/admin/${table}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || 'Failed to fetch')
+      }
+      const json = await res.json()
+      setRows(json.data ?? [])
+    } catch (e) {
+      console.error(e)
       setRows([])
-    } else {
-      setRows(data ?? [])
     }
     setLoading(false)
   }
 
   async function handleAdd() {
-    const payload = prompt('Enter JSON for new row (e.g. {"date":"2025-01-01","raw_material_kg":100})')
-    if (!payload) return
-    try {
-      const obj = JSON.parse(payload)
-      const { error } = await supabase.from(table).insert([obj])
-      if (error) throw error
-      await load()
-    } catch (e: any) {
-      alert('Error: ' + e.message)
-    }
+    setModalMode('add')
+    setModalContent('{}')
+    setEditingId(null)
+    setModalOpen(true)
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this row?')) return
-    const { error } = await supabase.from(table).delete().eq('id', id)
-    if (error) return alert(error.message)
-    await load()
+    try {
+      const token = await getAccessToken()
+      const res = await fetch(`/api/admin/${table}/${id}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || 'Failed to delete')
+      }
+      await load()
+    } catch (e: any) {
+      alert('Error: ' + (e.message ?? String(e)))
+    }
   }
 
   async function handleEdit(row: any) {
-    const payload = prompt('Edit JSON for this row', JSON.stringify(row))
-    if (!payload) return
+    setModalMode('edit')
+    setModalContent(JSON.stringify(row, null, 2))
+    setEditingId(String(row.id))
+    setModalOpen(true)
+  }
+
+  async function handleModalSave() {
     try {
-      const obj = JSON.parse(payload)
-      const { error } = await supabase.from(table).update(obj).eq('id', row.id)
-      if (error) throw error
+      const obj = JSON.parse(modalContent)
+      const token = await getAccessToken()
+      if (modalMode === 'add') {
+        const res = await fetch(`/api/admin/${table}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify(obj),
+        })
+        if (!res.ok) throw new Error(await res.text())
+      } else if (modalMode === 'edit' && editingId) {
+        const res = await fetch(`/api/admin/${table}/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify(obj),
+        })
+        if (!res.ok) throw new Error(await res.text())
+      }
+      setModalOpen(false)
       await load()
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      alert('Error: ' + (e.message ?? String(e)))
     }
   }
 
@@ -138,6 +182,21 @@ export default function LogsTable() {
           </table>
         )}
       </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg w-full max-w-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-bold">{modalMode === 'add' ? 'Add Row' : 'Edit Row'}</h3>
+              <div className="flex gap-2">
+                <button onClick={() => setModalOpen(false)} className="px-3 py-1 bg-gray-200 rounded">Cancel</button>
+                <button onClick={handleModalSave} className="px-3 py-1 bg-blue-600 text-white rounded">Save</button>
+              </div>
+            </div>
+            <textarea value={modalContent} onChange={(e) => setModalContent(e.target.value)} rows={12} className="w-full p-2 border rounded text-sm font-mono" />
+          </div>
+        </div>
+      )}
     </section>
   )
 }
