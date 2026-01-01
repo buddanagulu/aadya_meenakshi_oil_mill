@@ -21,6 +21,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
+        router.refresh()
         router.push('/') // Redirect to Dashboard
       }
     } catch (err: unknown) {
