@@ -19,6 +19,8 @@ async function requireAdmin(req: Request) {
   if (userErr || !userData?.user) return { ok: false, status: 401, message: 'Invalid token' }
 
   const userId = userData.user.id
+  const userEmail = userData.user.email
+
   const { data: profile, error: pErr } = await supabaseAdmin
     .from('profiles')
     .select('role')
@@ -26,7 +28,25 @@ async function requireAdmin(req: Request) {
     .maybeSingle()
 
   if (pErr) return { ok: false, status: 500, message: 'Error checking profile' }
-  if (!profile || profile.role !== 'ADMIN') return { ok: false, status: 403, message: 'Admin required' }
+
+  // Bootstrap Admin: If user is the specific admin email, ensure they have ADMIN role
+  if (userEmail === 'buddanagulu@gmail.com') {
+    if (!profile || !['ADMIN', 'SUPER_ADMIN'].includes(profile.role)) {
+      const { error: upsertErr } = await supabaseAdmin
+        .from('profiles')
+        .upsert({ id: userId, role: 'SUPER_ADMIN', email: userEmail }) // Upgrade to SUPER_ADMIN for owner
+      
+      if (upsertErr) {
+        console.error('Failed to bootstrap admin', upsertErr)
+      } else {
+        return { ok: true, user: userData.user }
+      }
+    } else {
+        return { ok: true, user: userData.user }
+    }
+  }
+
+  if (!profile || !['ADMIN', 'SUPER_ADMIN'].includes(profile.role)) return { ok: false, status: 403, message: 'Admin required' }
 
   return { ok: true, user: userData.user }
 }
