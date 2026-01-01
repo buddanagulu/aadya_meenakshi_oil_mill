@@ -5,18 +5,17 @@ import {
   Store, 
   Receipt, 
   Users, 
-  Zap, 
-  TrendingUp 
+  Zap 
 } from 'lucide-react';
 
 export const NAVIGATION_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-  { id: 'production', label: 'Production (Mill)', icon: <Factory size={20} /> },
-  { id: 'inventory', label: 'Shop Inventory', icon: <Store size={20} /> },
+  { id: 'dashboard', label: 'Analytics', icon: <LayoutDashboard size={20} /> },
+  { id: 'production_logs', label: 'Production Mill', icon: <Factory size={20} /> },
+  { id: 'shop_inventory', label: 'Shop Inventory', icon: <Store size={20} /> },
   { id: 'transactions', label: 'Transactions', icon: <Receipt size={20} /> },
   { id: 'ledgers', label: 'Dues & Ledgers', icon: <Users size={20} /> },
-  { id: 'utilities', label: 'Utilities (Power)', icon: <Zap size={20} /> },
-  { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={20} /> },
+  { id: 'utility_logs', label: 'Utilities', icon: <Zap size={20} /> },
+  { id: 'profiles', label: 'Profiles', icon: <Users size={20} /> },
 ];
 
 export const TRANSACTION_CATEGORIES = [

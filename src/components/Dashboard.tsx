@@ -13,13 +13,39 @@ import {
 } from 'lucide-react';
 import { ProductionLog, ShopInventory, Transaction } from '../types';
 
-interface DashboardProps {
-  production: ProductionLog[];
-  inventory: ShopInventory[];
-  transactions: Transaction[];
-}
+import { supabase } from '../lib/supabaseClient';
 
-export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, transactions }) => {
+export const Dashboard: React.FC = () => {
+  const [production, setProduction] = React.useState<ProductionLog[]>([]);
+  const [inventory, setInventory] = React.useState<ShopInventory[]>([]);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const [prodRes, invRes, transRes] = await Promise.all([
+          fetch('/api/admin/production_logs', { headers }),
+          fetch('/api/admin/shop_inventory', { headers }),
+          fetch('/api/admin/transactions', { headers })
+        ]);
+
+        if (prodRes.ok) setProduction((await prodRes.json()).data || []);
+        if (invRes.ok) setInventory((await invRes.json()).data || []);
+        if (transRes.ok) setTransactions((await transRes.json()).data || []);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   // Financial metrics
   const totalRevenue = transactions
     .filter(t => t.type === 'INCOME')
@@ -30,12 +56,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
     .reduce((sum, t) => sum + t.amount, 0);
 
   const netProfit = totalRevenue - totalExpenses;
-  const stockValue = inventory.reduce((sum, i) => sum + i.totalInvestment, 0);
+  const stockValue = inventory.reduce((sum, i) => sum + i.total_investment, 0);
   
   // Production metrics
-  const totalRawProcessed = production.reduce((sum, l) => sum + l.rawMaterialKg, 0);
+  const totalRawProcessed = production.reduce((sum, l) => sum + l.raw_material_kg, 0);
   const averageYield = production.length > 0 
-    ? (production.reduce((sum, l) => sum + (l.pindiProducedKg / l.rawMaterialKg), 0) / production.length * 100).toFixed(1)
+    ? (production.reduce((sum, l) => sum + (l.pindi_produced_kg / l.raw_material_kg), 0) / production.length * 100).toFixed(1)
     : 0;
 
   const kpiCards = [
@@ -88,6 +114,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
 
+  if (loading) return <div className="p-8 text-center text-gray-500">Loading analytics...</div>;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -123,7 +151,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Production Chart (unchanged container) */}
         <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          {/* ... chart code ... */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-black text-gray-900">Production Volume</h3>
@@ -152,7 +179,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
                   itemStyle={{ color: '#fff' }}
                   cursor={{ stroke: '#6366f1', strokeWidth: 2 }}
                 />
-                <Area type="monotone" dataKey="rawMaterialKg" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#areaGrad)" />
+                <Area type="monotone" dataKey="raw_material_kg" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#areaGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

@@ -4,11 +4,12 @@ import { Button } from './ui/button'
 import { supabase } from '../lib/supabaseClient'
 
 const items = [
-  { id: 'production_logs', label: 'Production Logs' },
+  { id: 'dashboard', label: 'Analytics' },
+  { id: 'production_logs', label: 'Production Mill' },
   { id: 'shop_inventory', label: 'Shop Inventory' },
   { id: 'transactions', label: 'Transactions' },
-  { id: 'ledgers', label: 'Ledgers' },
-  { id: 'utility_logs', label: 'Utility Logs' },
+  { id: 'ledgers', label: 'Dues & Ledgers' },
+  { id: 'utility_logs', label: 'Utilities' },
   { id: 'profiles', label: 'Profiles' },
 ]
 

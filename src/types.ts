@@ -1,41 +1,42 @@
 export type TransactionType = 'INCOME' | 'EXPENSE';
 
 export interface ProductionLog {
-  id: string; // or number, keeping string for now based on user mock
+  id: string; 
   date: string;
-  rawMaterialKg: number; // seeds/grains
-  workingFeeRs: number; // revenue from processing
-  pindiProducedKg: number; // output
-  pindiSoldKg: number;
-  pindiRateRs: number;
-  totalDailyRevenue: number;
+  raw_material_kg: number; 
+  working_fee_rs: number; 
+  pindi_produced_kg: number; 
+  pindi_sold_kg: number;
+  pindi_rate_rs: number;
+  total_daily_revenue: number;
 }
 
 export interface ShopInventory {
   id: string;
-  productName: string;
+  product_name: string;
   category: 'Oil' | 'Flour' | 'ByProduct';
-  quantity: number; // mapped from quantity/stock_kg_litres
+  quantity: number; 
   unit: 'kg' | 'lt';
-  pricePerUnit: number;
-  totalInvestment: number; // derived
+  price_per_unit: number;
+  total_investment: number; // derived or stored? stored usually.
+  last_updated?: string;
 }
-
+  
 export interface Transaction {
   id: string;
   date: string;
   amount: number;
   type: TransactionType;
   category: string;
-  paymentMethod: string;
+  payment_method: string;
   description?: string;
 }
 
 export interface Ledger {
   id: string;
-  personName: string;
-  totalDebt: number;
-  lastTransactionDate: string;
+  person_name: string;
+  total_debt: number;
+  last_transaction_date: string;
   status: 'Active' | 'Settled';
 }
 

@@ -19,14 +19,23 @@ const tableList: TableKey[] = [
   'profiles',
 ]
 
-export default function LogsTable() {
-  const [table, setTable] = useState<TableKey>('production_logs')
+interface LogsTableProps {
+  initialTable?: TableKey
+  showTabs?: boolean
+}
+
+export default function LogsTable({ initialTable = 'production_logs', showTabs = true }: LogsTableProps) {
+  const [table, setTable] = useState<TableKey>(initialTable)
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
   const [modalContent, setModalContent] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setTable(initialTable)
+  }, [initialTable])
 
   useEffect(() => {
     load()
@@ -122,7 +131,7 @@ export default function LogsTable() {
   return (
     <section>
       <div className="flex gap-2 flex-wrap items-center">
-        {tableList.map((t) => (
+        {showTabs && tableList.map((t) => (
           <button
             key={t}
             onClick={() => setTable(t)}

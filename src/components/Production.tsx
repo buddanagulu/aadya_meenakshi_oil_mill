@@ -10,11 +10,11 @@ export const Production: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
     date: new Date().toISOString().split('T')[0],
-    rawMaterialKg: '',
-    workingFeeRs: '',
-    pindiProducedKg: '',
-    pindiSoldKg: '',
-    pindiRateRs: '',
+    raw_material_kg: '',
+    working_fee_rs: '',
+    pindi_produced_kg: '',
+    pindi_sold_kg: '',
+    pindi_rate_rs: '',
   });
 
   const fetchLogs = async () => {
@@ -42,17 +42,17 @@ export const Production: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const workingFee = Number(formData.workingFeeRs);
-    const pindiTotal = Number(formData.pindiSoldKg) * Number(formData.pindiRateRs);
+    const workingFee = Number(formData.working_fee_rs);
+    const pindiTotal = Number(formData.pindi_sold_kg) * Number(formData.pindi_rate_rs);
     
     const newLog = {
       date: formData.date,
-      rawMaterialKg: Number(formData.rawMaterialKg),
-      workingFeeRs: workingFee,
-      pindiProducedKg: Number(formData.pindiProducedKg),
-      pindiSoldKg: Number(formData.pindiSoldKg),
-      pindiRateRs: Number(formData.pindiRateRs),
-      totalDailyRevenue: workingFee + pindiTotal
+      raw_material_kg: Number(formData.raw_material_kg),
+      working_fee_rs: workingFee,
+      pindi_produced_kg: Number(formData.pindi_produced_kg),
+      pindi_sold_kg: Number(formData.pindi_sold_kg),
+      pindi_rate_rs: Number(formData.pindi_rate_rs),
+      total_daily_revenue: workingFee + pindiTotal
     };
 
     try {
@@ -71,7 +71,6 @@ export const Production: React.FC = () => {
       if (res.ok) {
         await fetchLogs(); // Refresh list
         setIsModalOpen(false);
-        // Reset form or keep date? keeping date is usually better
       } else {
         alert('Failed to save log');
       }
@@ -115,7 +114,8 @@ export const Production: React.FC = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
               <tr>
@@ -131,11 +131,11 @@ export const Production: React.FC = () => {
               {logs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium">{log.date}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{log.rawMaterialKg} kg</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">₹{log.workingFeeRs}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{log.pindiSoldKg} kg</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">₹{log.pindiRateRs}/kg</td>
-                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">₹{log.totalDailyRevenue}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{log.raw_material_kg} kg</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">₹{log.working_fee_rs}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{log.pindi_sold_kg} kg</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">₹{log.pindi_rate_rs}/kg</td>
+                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">₹{log.total_daily_revenue}</td>
                 </tr>
               ))}
               {logs.length === 0 && (
@@ -147,6 +147,41 @@ export const Production: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden grid grid-cols-1 gap-4 p-4">
+          {logs.map((log) => (
+            <div key={log.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-gray-50 pb-2">
+                <span className="text-sm font-bold text-gray-900">{log.date}</span>
+                <span className="text-sm font-bold text-indigo-600">₹{log.total_daily_revenue}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <p className="text-gray-400">Palli Work</p>
+                  <p className="font-medium text-gray-700">{log.raw_material_kg} kg</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Working Fee</p>
+                  <p className="font-medium text-gray-700">₹{log.working_fee_rs}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Pindi Sold</p>
+                  <p className="font-medium text-gray-700">{log.pindi_sold_kg} kg</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Rate</p>
+                  <p className="font-medium text-gray-700">₹{log.pindi_rate_rs}/kg</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {logs.length === 0 && (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              No production logs found.
+            </div>
+          )}
         </div>
       </div>
 
@@ -168,8 +203,8 @@ export const Production: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Palli Work (Kg)</label>
                   <input 
                     type="number" required placeholder="Raw Weight" 
-                    value={formData.rawMaterialKg} 
-                    onChange={e => setFormData({...formData, rawMaterialKg: e.target.value})}
+                    value={formData.raw_material_kg} 
+                    onChange={e => setFormData({...formData, raw_material_kg: e.target.value})}
                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -177,8 +212,8 @@ export const Production: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Working Fee (Rs)</label>
                   <input 
                     type="number" required placeholder="Revenue" 
-                    value={formData.workingFeeRs} 
-                    onChange={e => setFormData({...formData, workingFeeRs: e.target.value})}
+                    value={formData.working_fee_rs} 
+                    onChange={e => setFormData({...formData, working_fee_rs: e.target.value})}
                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -188,8 +223,8 @@ export const Production: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Pindi Produced (Kg)</label>
                   <input 
                     type="number" required placeholder="Total Pindi" 
-                    value={formData.pindiProducedKg} 
-                    onChange={e => setFormData({...formData, pindiProducedKg: e.target.value})}
+                    value={formData.pindi_produced_kg} 
+                    onChange={e => setFormData({...formData, pindi_produced_kg: e.target.value})}
                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -197,8 +232,8 @@ export const Production: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Pindi Sold (Kg)</label>
                   <input 
                     type="number" required placeholder="Sold today" 
-                    value={formData.pindiSoldKg} 
-                    onChange={e => setFormData({...formData, pindiSoldKg: e.target.value})}
+                    value={formData.pindi_sold_kg} 
+                    onChange={e => setFormData({...formData, pindi_sold_kg: e.target.value})}
                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -207,8 +242,8 @@ export const Production: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Pindi Rate (Rs/Kg)</label>
                 <input 
                   type="number" required placeholder="e.g. 34" 
-                  value={formData.pindiRateRs} 
-                  onChange={e => setFormData({...formData, pindiRateRs: e.target.value})}
+                  value={formData.pindi_rate_rs} 
+                  onChange={e => setFormData({...formData, pindi_rate_rs: e.target.value})}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>

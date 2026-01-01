@@ -4,6 +4,11 @@ import React, { useState } from 'react';
 import { Layout } from './Layout';
 import { Dashboard } from './Dashboard';
 import { Production } from './Production';
+import { ShopInventoryPage } from './ShopInventory';
+import { TransactionsPage } from './Transactions';
+import { LedgersPage } from './Ledgers';
+import { UtilityLogsPage } from './UtilityLogs';
+import LogsTable from './LogsTable';
 
 export const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -20,18 +25,21 @@ export const AdminPanel: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard production={[]} inventory={[]} transactions={[]} />; 
-      case 'production':
+        return <Dashboard />; 
+      case 'production_logs':
         return <Production />;
+      case 'shop_inventory':
+        return <ShopInventoryPage />;
+      case 'transactions':
+        return <TransactionsPage />;
+      case 'ledgers': // Dues & Ledgers
+        return <LedgersPage />;
+      case 'utility_logs': // Utilities
+        return <UtilityLogsPage />;
+      case 'profiles':
+        return <LogsTable initialTable="profiles" showTabs={false} />;
       default:
-        return (
-          <div className="flex items-center justify-center h-96 bg-white rounded-2xl border border-gray-100 border-dashed">
-            <div className="text-center">
-              <p className="text-gray-400 font-medium">Coming Soon</p>
-              <h3 className="text-xl font-bold text-gray-900 mt-1 capitalize">{activeTab} Module</h3>
-            </div>
-          </div>
-        );
+        return <Dashboard />;
     }
   };
 
