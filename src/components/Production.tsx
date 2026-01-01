@@ -2,12 +2,11 @@ import React from 'react';
 import { ProductionLog } from '../types';
 import { Plus, Search, Filter } from 'lucide-react';
 
-interface ProductionProps {
-  logs: ProductionLog[];
-  onAddLog: (log: Omit<ProductionLog, 'id'>) => void;
-}
+import { supabase } from '../lib/supabaseClient';
 
-export const Production: React.FC<ProductionProps> = ({ logs, onAddLog }) => {
+export const Production: React.FC = () => {
+  const [logs, setLogs] = React.useState<ProductionLog[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
     date: new Date().toISOString().split('T')[0],
@@ -18,12 +17,35 @@ export const Production: React.FC<ProductionProps> = ({ logs, onAddLog }) => {
     pindiRateRs: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchLogs = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await fetch('/api/admin/production_logs', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setLogs(json.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch logs', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const workingFee = Number(formData.workingFeeRs);
     const pindiTotal = Number(formData.pindiSoldKg) * Number(formData.pindiRateRs);
     
-    onAddLog({
+    const newLog = {
       date: formData.date,
       rawMaterialKg: Number(formData.rawMaterialKg),
       workingFeeRs: workingFee,
@@ -31,9 +53,35 @@ export const Production: React.FC<ProductionProps> = ({ logs, onAddLog }) => {
       pindiSoldKg: Number(formData.pindiSoldKg),
       pindiRateRs: Number(formData.pindiRateRs),
       totalDailyRevenue: workingFee + pindiTotal
-    });
-    setIsModalOpen(false);
+    };
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch('/api/admin/production_logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(newLog),
+      });
+
+      if (res.ok) {
+        await fetchLogs(); // Refresh list
+        setIsModalOpen(false);
+        // Reset form or keep date? keeping date is usually better
+      } else {
+        alert('Failed to save log');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error saving log');
+    }
   };
+
+  if (loading) return <div className="p-4">Loading logs...</div>;
 
   return (
     <div className="space-y-6">

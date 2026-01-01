@@ -8,10 +8,8 @@ import {
   TrendingUp, 
   Package, 
   Scale, 
-  Database,
   ArrowUpRight,
-  Zap,
-  Activity
+  Zap
 } from 'lucide-react';
 import { ProductionLog, ShopInventory, Transaction } from '../types';
 
@@ -96,16 +94,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ production, inventory, tra
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Admin Dashboard</h1>
           <p className="text-gray-500 font-medium">Mill & Retail performance monitoring system.</p>
-        </div>
-        <div className="flex items-center gap-3">
-           <div className="bg-white border border-gray-200 px-4 py-2 rounded-2xl shadow-sm flex items-center gap-2">
-             <Activity size={18} className="text-green-500" />
-             <span className="text-sm font-bold text-gray-700">Live API Mock</span>
-           </div>
-           <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl shadow-lg shadow-indigo-200 flex items-center gap-2 cursor-pointer hover:bg-indigo-700 transition-all">
-             <Database size={18} />
-             <span className="text-sm font-bold">Supabase Integration Ready</span>
-           </div>
         </div>
       </header>
 
