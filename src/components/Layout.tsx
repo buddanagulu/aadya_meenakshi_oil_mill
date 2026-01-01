@@ -1,6 +1,8 @@
 import React from 'react';
 import { NAVIGATION_ITEMS } from '../constants';
-import { Menu, X } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
+import { Menu, X, LogOut } from 'lucide-react';
 
 interface LayoutProps {
   activeTab: string;
@@ -10,6 +12,12 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/auth/login');
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
@@ -56,7 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
           ))}
         </nav>
 
-        <div className="p-4 bg-indigo-950 mt-auto">
+        <div className="p-4 bg-indigo-950 mt-auto space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-bold">
               AM
@@ -66,6 +74,13 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
               <p className="text-xs text-indigo-400">Mill Owner</p>
             </div>
           </div>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 p-2 bg-indigo-900 hover:bg-red-600 text-indigo-200 hover:text-white rounded-lg transition-colors text-sm font-medium border border-indigo-800 hover:border-red-500"
+          >
+            <LogOut size={16} />
+            Sign Out
+          </button>
         </div>
       </aside>
 
