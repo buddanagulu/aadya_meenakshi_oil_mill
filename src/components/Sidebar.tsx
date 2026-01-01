@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import { Button } from './ui/button'
-import supabase from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 const items = [
   { id: 'production_logs', label: 'Production Logs' },
@@ -17,7 +17,7 @@ export default function Sidebar({ onSelect }: { onSelect?: (id: string) => void 
     try {
       await supabase.auth.signOut()
       window.location.reload()
-    } catch (e) {
+    } catch {
       // ignore
     }
   }

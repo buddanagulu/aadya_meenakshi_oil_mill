@@ -31,8 +31,9 @@ async function requireAdmin(req: Request) {
   return { ok: true, user: userData.user }
 }
 
-export async function GET(req: Request, { params }: { params: { table: string } }) {
-  const table = params.table
+
+export async function GET(req: Request, { params }: { params: Promise<{ table: string }> }) {
+  const { table } = await params
   if (!ALLOWED_TABLES.includes(table)) return new Response('Table not allowed', { status: 400 })
 
   const auth = await requireAdmin(req)
@@ -48,8 +49,8 @@ export async function GET(req: Request, { params }: { params: { table: string } 
   }
 }
 
-export async function POST(req: Request, { params }: { params: { table: string } }) {
-  const table = params.table
+export async function POST(req: Request, { params }: { params: Promise<{ table: string }> }) {
+  const { table } = await params
   if (!ALLOWED_TABLES.includes(table)) return new Response('Table not allowed', { status: 400 })
 
   const auth = await requireAdmin(req)

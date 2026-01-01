@@ -30,8 +30,9 @@ async function requireAdmin(req: Request) {
   return { ok: true, user: userData.user }
 }
 
-export async function GET(req: Request, { params }: { params: { table: string; id: string } }) {
-  const { table, id } = params
+
+export async function GET(req: Request, { params }: { params: Promise<{ table: string; id: string }> }) {
+  const { table, id } = await params
   if (!ALLOWED_TABLES.includes(table)) return new Response('Table not allowed', { status: 400 })
 
   const auth = await requireAdmin(req)
@@ -41,13 +42,13 @@ export async function GET(req: Request, { params }: { params: { table: string; i
     const { data, error } = await supabaseAdmin.from(table).select('*').eq('id', id).maybeSingle()
     if (error) return new Response(error.message, { status: 500 })
     return new Response(JSON.stringify({ data }), { status: 200 })
-  } catch (e: any) {
-    return new Response(String(e?.message ?? e), { status: 500 })
+  } catch (e: unknown) {
+    return new Response(String(e instanceof Error ? e.message : e), { status: 500 })
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { table: string; id: string } }) {
-  const { table, id } = params
+export async function PUT(req: Request, { params }: { params: Promise<{ table: string; id: string }> }) {
+  const { table, id } = await params
   if (!ALLOWED_TABLES.includes(table)) return new Response('Table not allowed', { status: 400 })
 
   const auth = await requireAdmin(req)
@@ -58,13 +59,13 @@ export async function PUT(req: Request, { params }: { params: { table: string; i
     const { data, error } = await supabaseAdmin.from(table).update(body).eq('id', id)
     if (error) return new Response(error.message, { status: 500 })
     return new Response(JSON.stringify({ data }), { status: 200 })
-  } catch (e: any) {
-    return new Response(String(e?.message ?? e), { status: 400 })
+  } catch (e: unknown) {
+    return new Response(String(e instanceof Error ? e.message : e), { status: 400 })
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { table: string; id: string } }) {
-  const { table, id } = params
+export async function DELETE(req: Request, { params }: { params: Promise<{ table: string; id: string }> }) {
+  const { table, id } = await params
   if (!ALLOWED_TABLES.includes(table)) return new Response('Table not allowed', { status: 400 })
 
   const auth = await requireAdmin(req)
@@ -74,7 +75,7 @@ export async function DELETE(req: Request, { params }: { params: { table: string
     const { data, error } = await supabaseAdmin.from(table).delete().eq('id', id)
     if (error) return new Response(error.message, { status: 500 })
     return new Response(JSON.stringify({ data }), { status: 200 })
-  } catch (e: any) {
-    return new Response(String(e?.message ?? e), { status: 500 })
+  } catch (e: unknown) {
+    return new Response(String(e instanceof Error ? e.message : e), { status: 500 })
   }
 }

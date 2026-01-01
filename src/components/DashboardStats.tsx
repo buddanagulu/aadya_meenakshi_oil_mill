@@ -1,12 +1,12 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import supabase from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 async function getAccessToken() {
   try {
-    const res: any = await supabase.auth.getSession()
-    return res?.data?.session?.access_token ?? null
-  } catch (e) {
+    const { data } = await supabase.auth.getSession()
+    return data?.session?.access_token ?? null
+  } catch {
     return null
   }
 }
@@ -38,7 +38,7 @@ export default function DashboardStats() {
           }
           const json = await res.json()
           next[t] = Array.isArray(json.data) ? json.data.length : 0
-        } catch (e) {
+        } catch {
           next[t] = 0
         }
       }

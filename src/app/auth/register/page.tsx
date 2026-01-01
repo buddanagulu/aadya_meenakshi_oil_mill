@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from 'react'
-import supabase from '../../../../src/lib/supabaseClient'
+import { supabase } from '../../../../src/lib/supabaseClient';
 import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
@@ -15,16 +15,25 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${location.origin}/auth/callback`,
+        },
+      })
       if (error) {
         setError(error.message)
       } else {
-        // user created; trigger may create profile
         alert('Registration successful — check your email to confirm')
-        router.push('/auth/login')
+        router.push('/')
       }
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('An unknown error occurred')
+      }
     } finally {
       setLoading(false)
     }

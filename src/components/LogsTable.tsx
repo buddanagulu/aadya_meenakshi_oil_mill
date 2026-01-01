@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react'
-import supabase from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 type TableKey =
   | 'production_logs'
@@ -21,7 +21,7 @@ const tableList: TableKey[] = [
 
 export default function LogsTable() {
   const [table, setTable] = useState<TableKey>('production_logs')
-  const [rows, setRows] = useState<any[]>([])
+  const [rows, setRows] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add')
@@ -35,9 +35,9 @@ export default function LogsTable() {
 
   async function getAccessToken() {
     try {
-      const res: any = await supabase.auth.getSession()
-      return res?.data?.session?.access_token ?? null
-    } catch (e) {
+      const { data } = await supabase.auth.getSession()
+      return data?.session?.access_token ?? null
+    } catch {
       return null
     }
   }
@@ -53,7 +53,7 @@ export default function LogsTable() {
       }
       const json = await res.json()
       setRows(json.data ?? [])
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e)
       setRows([])
     }
@@ -76,16 +76,16 @@ export default function LogsTable() {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       })
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || 'Failed to delete')
+        throw new Error((await res.text()) || 'Failed to delete')
       }
       await load()
-    } catch (e: any) {
-      alert('Error: ' + (e.message ?? String(e)))
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      alert('Error: ' + msg)
     }
   }
 
-  async function handleEdit(row: any) {
+  async function handleEdit(row: Record<string, unknown>) {
     setModalMode('edit')
     setModalContent(JSON.stringify(row, null, 2))
     setEditingId(String(row.id))
@@ -113,8 +113,9 @@ export default function LogsTable() {
       }
       setModalOpen(false)
       await load()
-    } catch (e: any) {
-      alert('Error: ' + (e.message ?? String(e)))
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      alert('Error: ' + msg)
     }
   }
 
@@ -158,10 +159,10 @@ export default function LogsTable() {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.id ?? Math.random()} className="border-t">
+                <tr key={String(row.id) ?? Math.random()} className="border-t">
                   {Object.keys(row).map((k) => (
                     <td key={k} className="px-4 py-3 text-sm text-gray-700">
-                      {String((row as any)[k])}
+                      {String(row[k])}
                     </td>
                   ))}
                   <td className="px-4 py-3 text-sm">
@@ -170,7 +171,7 @@ export default function LogsTable() {
                         Edit
                       </button>
                       {row.id ? (
-                        <button onClick={() => handleDelete(row.id)} className="px-2 py-1 bg-red-500 text-white rounded-md text-xs">
+                        <button onClick={() => handleDelete(String(row.id))} className="px-2 py-1 bg-red-500 text-white rounded-md text-xs">
                           Delete
                         </button>
                       ) : null}
